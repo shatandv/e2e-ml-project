@@ -4,6 +4,8 @@ Custom exception handling module.
 
 import sys
 
+from src.logger import logging
+
 
 # A bit weird we're making a function parameter have type "sys". Is this really right?
 def error_message_detail(error, error_detail: sys) -> str:
@@ -42,4 +44,5 @@ if __name__ == "__main__":
     try:
         1 / 0
     except Exception as e:
+        logging.error(f"Error occured: {e}")
         raise CustomException(e, sys)
