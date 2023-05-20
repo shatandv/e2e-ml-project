@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import os
 import sys
+from typing import Tuple
 
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -20,11 +21,11 @@ class DataIngestion:
     def __init__(self):
         self.ingestion_config = DataIngestionConfig()
 
-    def initiate_data_ingestion(self):
+    def initiate_data_ingestion(self) -> Tuple[str, str]:
         """
         Read raw data - from DB, file, API, etc.
         """
-        logging.info("Entered the data ingestion method or component")
+        logging.info("Starting data ingestion")
 
         try:
             df = pd.read_csv("notebooks\data\stud.csv")
@@ -54,8 +55,9 @@ class DataIngestion:
             )
 
         except Exception as e:
-            logging.error(f"Error while ingesting the data: {e}")
-            raise CustomException(f"Error while ingesting the data: {e}")
+            msg = f"Error while ingesting the data: {e}"
+            logging.error(msg)
+            raise CustomException(msg, sys)
 
 
 if __name__ == "__main__":
