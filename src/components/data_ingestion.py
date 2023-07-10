@@ -9,10 +9,8 @@ from sklearn.model_selection import train_test_split
 from src.exception import CustomException
 from src.logger import logging
 
-from src.components.data_transformation import (
-    DataTransformationConfig,
-    DataTransformation,
-)
+from src.components.data_transformation import DataTransformation
+from src.components.model_trainer import ModelTrainer
 
 
 @dataclass
@@ -75,3 +73,7 @@ if __name__ == "__main__":
     )
 
     print(train_arr, "\n", test_arr)
+
+    trainer = ModelTrainer()
+    model_score = trainer.initiate_model_training(train_arr, test_arr)
+    print(f"Training finished, model score: {model_score}")
