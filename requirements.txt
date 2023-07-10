@@ -8,4 +8,5 @@ xgboost
 lightgbm
 dill
 tqdm
+flask
 -e .
