@@ -1,11 +1,13 @@
+import itertools
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import dill
 import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score
+from tqdm import tqdm
 
 from src.exception import CustomException
 from src.logger import logging
@@ -29,19 +31,66 @@ def save_object(obj: Any, path: str) -> None:
         raise CustomException(msg, sys)
 
 
-def evaluate_models(x_train, y_train, x_test, y_test, models) -> Dict[str, float]:
+def get_param_combinations(params: Dict[str, Any]) -> List[dict]:
+    try:
+        if len(params) == 0:
+            param_combinations = [{}]
+        else:
+            param_names = params.keys()
+            values = params.values()
+            param_combinations = [
+                dict(zip(param_names, v)) for v in itertools.product(*values)
+            ]
+
+        return param_combinations
+
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+def evaluate_models(
+    x_train, y_train, x_test, y_test, models, model_params
+) -> Dict[str, float]:
     try:
         scores = {}
 
-        for key, model in models.items():
-            model.fit(x_train, y_train)
-            # y_train_pred = model.predict(x_train)
-            # train_score = r2_score(y_train, y_train_pred)
-            y_test_pred = model.predict(x_test)
-            test_score = r2_score(y_test, y_test_pred)
-            scores[key] = test_score
+        for key, model_algo in models.items():
+            params = get_param_combinations(model_params[key])
+            scores[key] = []
+
+            for param in tqdm(params):
+                logging.info(f"Model: {key}, params: {param}")
+                model = model_algo(**param)
+
+                model.fit(x_train, y_train)
+
+                y_test_pred = model.predict(x_test)
+                test_score = r2_score(y_test, y_test_pred)
+
+                scores[key].append((param, test_score))
 
         return scores
 
+    except Exception as e:
+        raise CustomException(e, sys)
+
+
+def get_best_model(scores: Dict[str, float], models: Dict[str, Any]) -> str:
+    try:
+        best_scores_per_model = {
+            model: max(param_scores, key=lambda x: x[1])
+            for model, param_scores in scores.items()
+        }
+
+        logging.info(f"Best scores per model: {best_scores_per_model}")
+
+        best_model_name, (best_params, best_score) = max(
+            best_scores_per_model.items(), key=lambda x: x[1][1]
+        )
+        best_model = models[best_model_name]
+        logging.info(
+            f"Best model: {best_model_name}, score: {best_score}, with params: {best_params}"
+        )
+        return best_model, best_score
     except Exception as e:
         raise CustomException(e, sys)
