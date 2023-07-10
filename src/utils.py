@@ -31,6 +31,19 @@ def save_object(obj: Any, path: str) -> None:
         raise CustomException(msg, sys)
 
 
+def load_object(path: str) -> Any:
+    try:
+        with open(path, "rb") as file:
+            obj = dill.load(file)
+            logging.info(f"Loaded object from {path}")
+
+        return obj
+    except Exception as e:
+        msg = f"Error while loading object: {e}"
+        logging.error(msg)
+        raise CustomException(msg, sys)
+
+
 def get_param_combinations(params: Dict[str, Any]) -> List[dict]:
     try:
         if len(params) == 0:
@@ -67,7 +80,7 @@ def evaluate_models(
                 y_test_pred = model.predict(x_test)
                 test_score = r2_score(y_test, y_test_pred)
 
-                scores[key].append((param, test_score))
+                scores[key].append((model, test_score))
 
         return scores
 
@@ -77,19 +90,18 @@ def evaluate_models(
 
 def get_best_model(scores: Dict[str, float], models: Dict[str, Any]) -> str:
     try:
-        best_scores_per_model = {
-            model: max(param_scores, key=lambda x: x[1])
-            for model, param_scores in scores.items()
+        best_scores_per_model_type = {
+            model_type: max(model_scores, key=lambda x: x[1])
+            for model_type, model_scores in scores.items()
         }
 
-        logging.info(f"Best scores per model: {best_scores_per_model}")
+        logging.info(f"Best scores per model: {best_scores_per_model_type}")
 
-        best_model_name, (best_params, best_score) = max(
-            best_scores_per_model.items(), key=lambda x: x[1][1]
+        best_model_name, (best_model, best_score) = max(
+            best_scores_per_model_type.items(), key=lambda x: x[1][1]
         )
-        best_model = models[best_model_name]
         logging.info(
-            f"Best model: {best_model_name}, score: {best_score}, with params: {best_params}"
+            f"Best model: {best_model_name}, score: {best_score}, with params: {best_model}"
         )
         return best_model, best_score
     except Exception as e:
